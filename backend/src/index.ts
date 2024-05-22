@@ -4,10 +4,17 @@ import { decode, sign, verify } from 'hono/jwt'
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import bcrypt from 'bcryptjs'
+import zod from 'zod'
+
+// const schema = .....
+// const result = schema.safeParse(detail)
+
+const emailSchema = zod.string().email();
 
 const app = new Hono<{
   Bindings: {
     DATABASE_URL: string,
+    JWT_STRING: string
   },
   Variables: {
     userId: string;
@@ -16,7 +23,7 @@ const app = new Hono<{
 
 app.use('*', cors())
 
-const jwt_secret = "password"
+// const jwt_secret = "password"
 
 type SignUpDetail = {
   firstname: string,
@@ -33,6 +40,21 @@ app.post('/register', async (c) => {
   
   const detail: SignUpDetail = await c.req.json();
 
+  const zodResult = emailSchema.safeParse(detail.email)
+  if(!zodResult.success){
+    c.status(400);
+    return c.json({
+      message: zodResult
+    })
+  }
+
+  if(detail.password === "" || detail.firstname === ""){
+    c.status(400)
+    return c.json({
+      message: "Invalid Credential"
+    })
+  }
+
   try {
     const response = await prisma.user.findUnique({
       where: {
@@ -41,6 +63,7 @@ app.post('/register', async (c) => {
     })
 
     if (response != null) {
+      c.status(400)
       return c.json({
         message: "User Already Exist"
       })
@@ -58,8 +81,9 @@ app.post('/register', async (c) => {
       },
     })
 
-    const token = await sign({ id: user.id }, jwt_secret);
+    const token = await sign({ id: user.id }, c.env.JWT_STRING);
 
+    c.status(200);
     return c.json({
       message: token
     })
@@ -82,6 +106,12 @@ app.get('/login', async (c) => {
   }).$extends(withAccelerate())
 
   const detail: Record<string,string> = await c.req.header();
+  const zodResult = emailSchema.safeParse(detail.email)
+  if(!zodResult.success){
+    return c.json({
+      message: zodResult
+    })
+  }
 
   console.log(detail);
 
@@ -105,7 +135,7 @@ app.get('/login', async (c) => {
       })
     }
 
-    const token = await sign({ id: response.id }, jwt_secret);
+    const token = await sign({ id: response.id }, c.env.JWT_STRING);
 
     return c.json({
       message: token
@@ -122,7 +152,7 @@ app.use("/user/*", async (c, next) => {
   console.log("middle ware called");
 
   try {
-      const user = await verify(token, jwt_secret)
+      const user = await verify(token, c.env.JWT_STRING)
       c.set("userId", user.id);
 
       await next();

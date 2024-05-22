@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import image from '../assets/image1.jpeg'
 
 export default function Login(){
 
@@ -29,11 +30,19 @@ export default function Login(){
     }
 
   return (
-    <div className='flex flex-col justify-center items-center mt-16'>
-        <input className='border-2 w-1/3 my-2 rounded-xl' onChange={(e) => {setEmail(e.target.value)}} type="text" placeholder='email' />
-        <input className='border-2 w-1/3 my-2 rounded-xl' onChange={(e) => {setPassword(e.target.value)}} type="text" placeholder='password' />
-        <button className='bg-blue-500 hover:bg-blue-400 w-20 my-3 p-1 rounded-2xl' onClick={() => {handleChange()}}> Login </button>
-        <button className='bg-blue-500 hover:bg-blue-400 w-24 my-3 p-1 rounded-2xl' ><Link to='/register'> Register </Link>  </button>
+    <div className='flex bg-purple-800 h-screen justify-center items-center'>
+        <div className='bg-red-500 w-1/4 h-3/4'>
+            <img className='h-full w-full' src={image} alt="" />
+        </div>
+        <div className='flex flex-col bg-orange-600 w-1/4 h-3/4 gap-7 justify-center items-center'>
+            <h1 className='mt-5 mb-3 font-bold font-serif text-3xl'>Login</h1>
+            <div className='flex flex-col justify-center gap-7 items-center w-4/5'>
+                <input className='border-2 w-3/4 h-10 px-10 rounded-2xl text-lg' onChange={(e) => {setEmail(e.target.value)}} type="text" placeholder='Email' />
+                <input className='border-2 w-3/4 h-10 px-10 rounded-2xl text-lg' onChange={(e) => {setPassword(e.target.value)}} type="text" placeholder='Password' />
+            </div>
+            <button className='bg-blue-500 hover:bg-blue-400 w-24 h-10 my-3 p-1 text-lg rounded-3xl' onClick={() => {handleChange()}}> Login </button>
+            <p className='text-slate-500 mb-4'> New To Habit Tracker ? <span className='text-white'> <Link to='/register'> Register </Link> </span></p>
+        </div>
     </div>
   )
 }

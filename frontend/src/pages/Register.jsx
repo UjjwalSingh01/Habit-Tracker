@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import image from '../assets/image2.jpeg'
 
 export default function Register(){
 
@@ -30,13 +31,23 @@ export default function Register(){
     }
 
   return (
-    <div className='flex flex-col items-center mt-16 bg-emerald-400'>
-        <input className='border-2 w-1/3 my-2 rounded-xl' type="text" onChange={(e) => {setFirstName(e.target.value)}} placeholder='First name'/>
-        <input className='border-2 w-1/3 my-2 rounded-xl' type="text" onChange={(e) => {setLastName(e.target.value)}} placeholder='Last name'/>
-        <input className='border-2 w-1/3 my-2 rounded-xl' type="text" onChange={(e) => {setEmail(e.target.value)}} placeholder='Email'/>
-        <input className='border-2 w-1/3 my-2 rounded-xl' type="text" onChange={(e) => {setPassword(e.target.value)}} placeholder='Password'/>
-        <button className='bg-blue-500 hover:bg-blue-400 w-24 my-3 p-1 rounded-2xl' onClick={() => {handleChange()}} >Register</button>
-        <button className='bg-blue-500 hover:bg-blue-400 w-24 my-3 p-1 rounded-2xl' ><Link to='/login'> Login </Link> </button>
+    <div className='flex bg-purple-800 h-screen justify-center items-center'>
+        <div className='bg-red-500 w-1/4 h-3/4'>
+            <img className='h-full w-full' src={image} alt="" />
+        </div>
+        <div className='flex flex-col bg-rose-600 w-1/4 h-3/4 gap-7 justify-center items-center'>
+            <h1 className='mt-5 mb-3 font-bold font-serif text-3xl'>Register</h1>
+            <div className='flex flex-col justify-center gap-7 items-center w-4/5'>
+                <div className='flex justify-around gap-2'>
+                    <input className='border-2 w-3/4 h-10 px-10 rounded-2xl text-lg' type="text" onChange={(e) => {setFirstName(e.target.value)}} placeholder='First name'/>
+                    <input className='border-2 w-3/4 h-10 px-10 rounded-2xl text-lg' type="text" onChange={(e) => {setLastName(e.target.value)}} placeholder='Last name'/>
+                </div>
+                <input className='border-2 w-3/4 h-10 px-10 rounded-2xl text-lg' type="text" onChange={(e) => {setEmail(e.target.value)}} placeholder='Email'/>
+                <input className='border-2 w-3/4 h-10 px-10 rounded-2xl text-lg' type="text" onChange={(e) => {setPassword(e.target.value)}} placeholder='Password'/>
+            </div>
+            <button className='bg-blue-500 hover:bg-blue-400 w-24 h-10 my-3 p-1 text-lg rounded-3xl' onClick={() => {handleChange()}} >Register</button>
+            <p className='text-slate-500'>Account Already Exist ? <span className='text-red-400'><Link to='/'> Login </Link></span> </p>
+        </div>
     </div>
   )
 }

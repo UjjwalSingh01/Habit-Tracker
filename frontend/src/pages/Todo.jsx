@@ -86,41 +86,44 @@ export default function Todo() {
   };
 
   return (
-    <div>
+    <div className="bg-custom-200 h-screen">
       <div className="flex gap-3 justify-center items-center">
-        <input className="border-2 rounded-lg my-5 mx-3" onChange={(e) => setTodo(e.target.value)} value={todo} required />
-        <button className="border-2 rounded-xl bg-emerald-400 w-16 ml-4 hover:bg-emerald-200" onClick={async () => {await handleAdd();}}> Add </button>
+        <input className="border-2 rounded-2xl h-14 px-6 my-5 mx-3" onChange={(e) => setTodo(e.target.value)} value={todo} placeholder="Add Task" required />
+        <button className="border-2 rounded-3xl bg-emerald-400 w-16 ml-4 h-10 hover:bg-emerald-200" onClick={async () => {await handleAdd();}}> Add </button>
         <Calendar />
       </div>
-      <h1 className="text-center m-4"> TODOS </h1>
-      {/* {console.log("moving ahead")} */}
+      <div className="flex justify-center items-center">
+        <h1 className="text-center m-4 px-4 w-fit bg-custom-300 rounded-xl p-2 text-3xl"> Tasks </h1>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
       {todoList.map((todo, index) => {
         // console.log("ayo "+todo);
         return( 
         <> 
-          <p className='bg-purple-400 flex items-center' key={todo.id}>
+          <div className='bg-custom-400 p-2 m-2 rounded-2xl flex flex-col justify-between' key={todo.id}>
             <label>
               <input
                 className='m-3'
-                // placeholder="Todos"
                 type="checkbox"
                 checked={todo.status}
                 onChange={async () => await handleCheckboxChange(todo)}
               />
-              <span
+              <span className='text-lg'
                 style={{
                   textDecoration: todo.status ? "line-through" : "none",
                   color: todo.status ? "lightgray" : "inherit",
-                }}
-              >
+                }} >
                 {todo.content}
               </span>
             </label>
-            <button className='bg-red-500 border-2 rounded-xl w-24 m-3 hover:bg-red-400' onClick={async () => await handleDelete(todo.id)}> Delete </button>
-          </p>
+            <div className="flex justify-end">
+              <button className='bg-red-500 border-2 h-10 rounded-xl w-24 hover:bg-red-300 m-2' onClick={async () => await handleDelete(todo.id)}> Delete </button>
+            </div>
+          </div>
         </>
         )     
       })}
+      </div>
     </div>
   );
 }
