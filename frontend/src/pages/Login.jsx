@@ -30,7 +30,7 @@ export default function Login(){
     }
 
   return (
-    <div className='flex bg-purple-800 h-screen justify-center items-center'>
+    <div className='flex bg-orange-300 h-screen justify-center items-center'>
         <div className='bg-red-500 w-1/4 h-3/4'>
             <img className='h-full w-full' src={image} alt="" />
         </div>

@@ -24,7 +24,7 @@ export default function Todo() {
         
         setTodoList(response.data.message); 
            
-        console.log("todos: ", response.data.message)    
+        // console.log("todos: ", response.data.message)    
         
       } catch (error) {
         console.error("Error in Fetching Todos: ", error);

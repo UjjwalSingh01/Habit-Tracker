@@ -13,6 +13,11 @@ export default function Register(){
     const [password, setPassword] = useState("");
 
     async function handleChange(){
+        console.log(firstname)
+        console.log(lastname)
+        console.log(email)
+        console.log(password)
+
         try {
             const response = await axios.post('http://localhost:8787/register', {
                 firstname: firstname,
@@ -26,13 +31,13 @@ export default function Register(){
             navigate('/homepage');
 
         } catch (error) {
-            console.error("Error in REgister: ", error)
+            console.error("Error in Register: ", error)
         }
     }
 
   return (
-    <div className='flex bg-purple-800 h-screen justify-center items-center'>
-        <div className='bg-red-500 w-1/4 h-3/4'>
+    <div className='flex bg-red-300 h-screen justify-center items-center'>
+        <div className=' w-1/4 h-3/4'>
             <img className='h-full w-full' src={image} alt="" />
         </div>
         <div className='flex flex-col bg-rose-600 w-1/4 h-3/4 gap-7 justify-center items-center'>
@@ -46,7 +51,7 @@ export default function Register(){
                 <input className='border-2 w-3/4 h-10 px-10 rounded-2xl text-lg' type="text" onChange={(e) => {setPassword(e.target.value)}} placeholder='Password'/>
             </div>
             <button className='bg-blue-500 hover:bg-blue-400 w-24 h-10 my-3 p-1 text-lg rounded-3xl' onClick={() => {handleChange()}} >Register</button>
-            <p className='text-slate-500'>Account Already Exist ? <span className='text-red-400'><Link to='/'> Login </Link></span> </p>
+            <p className='text-slate-500'>Account Already Exist ? <span className='text-white'><Link to='/'> Login </Link></span> </p>
         </div>
     </div>
   )

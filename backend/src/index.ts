@@ -23,8 +23,6 @@ const app = new Hono<{
 
 app.use('*', cors())
 
-// const jwt_secret = "password"
-
 type SignUpDetail = {
   firstname: string,
   lastname: string,
@@ -39,6 +37,7 @@ app.post('/register', async (c) => {
   }).$extends(withAccelerate())
   
   const detail: SignUpDetail = await c.req.json();
+  console.log(detail)
 
   const zodResult = emailSchema.safeParse(detail.email)
   if(!zodResult.success){
@@ -47,7 +46,7 @@ app.post('/register', async (c) => {
       message: zodResult
     })
   }
-
+  
   if(detail.password === "" || detail.firstname === ""){
     c.status(400)
     return c.json({
@@ -113,7 +112,7 @@ app.get('/login', async (c) => {
     })
   }
 
-  console.log(detail);
+  // console.log(detail);
 
   try {
     const response = await prisma.user.findUnique({
@@ -149,7 +148,7 @@ app.get('/login', async (c) => {
 // Middleware
 app.use("/user/*", async (c, next) => {
   const token = c.req.header("authorization") || "";
-  console.log("middle ware called");
+  // console.log("middle ware called");
 
   try {
       const user = await verify(token, c.env.JWT_STRING)
@@ -158,7 +157,6 @@ app.use("/user/*", async (c, next) => {
       await next();
 
   } catch (err) {
-      
       return c.json({
           message: "You Are Not Logged In"
       })
@@ -175,7 +173,7 @@ app.get('/user/fetchtodo', async(c) =>{
   const date: any = await c.req.query('date');
   const userId = c.get("userId");
 
-  console.log("backend " + date);
+  // console.log("backend " + date);
 
   try {
     const response = await prisma.date.findFirst({
@@ -315,7 +313,7 @@ app.delete('/deletetodo', async(c) =>{
   }).$extends(withAccelerate())
 
   const detail: any = await c.req.query('id')
-  console.log(detail);
+  // console.log(detail);
 
   try {
     const deleteTodo = await prisma.todo.delete({
