@@ -109,7 +109,7 @@ export default function TodoList() {
   // Add a new task
   const addTask = async (e) => {
     e.preventDefault();
-
+  
     try {
       const response = await axios.post(
         "http://localhost:8787/user/addtodo",
@@ -122,19 +122,17 @@ export default function TodoList() {
         },
         { headers: { Authorization: localStorage.getItem("token") } }
       );
-
-      const newTask = response.data.message;
-
-      const updatedTasks = [...tasks, newTask].sort(
+  
+      const updatedTasks = response.data.message.sort(
         (a, b) => a.status - b.status || a.priority - b.priority
       );
-
+  
       setTasks(updatedTasks);
       closeModal();
     } catch (error) {
       console.error("Error adding task:", error);
     }
-  };
+  };  
 
   // Add a new subtask
   const addSubtask = () => {

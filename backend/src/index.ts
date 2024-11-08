@@ -208,7 +208,18 @@ app.post('/user/addtodo', async (c) => {
       });
     }
 
-    return c.json({ message: newTodo });
+    const todos = await prisma.todo.findMany({
+      where: { 
+        dateId: dateRecord.id 
+      },
+      include: { 
+        subtasks: true 
+      },
+    });
+
+    return c.json({ 
+      message: todos
+    });
 
   } catch (error) {
     console.error("Error adding todo:", error);
