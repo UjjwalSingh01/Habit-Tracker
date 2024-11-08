@@ -15,29 +15,36 @@ datasource db {
 
 model User {
   id          String    @id @default(uuid())
-  firstname   String
-  lastname    String
+  firstName   String    
+  lastName    String?
   email       String    @unique
   password    String
-  // Define a reverse relation to the Date model
-  dates       Date[]    @relation("userDates")
+  dates       Date[]    @relation("UserDates")
 }
 
 model Date {
-  id        String    @id @default(uuid())
-  date      String
-  // Define a relation to the User model
-  user      User      @relation("userDates", fields: [userId], references: [id])
-  userId    String
-  todos     Todo[]
+  id          String    @id @default(uuid())
+  date        String
+  userId      String
+  user        User      @relation("UserDates", fields: [userId], references: [id])
+  todos       Todo[]    
 }
 
 model Todo {
-  id        String    @id @default(uuid())
-  content   String
-  status    Boolean
-  // Define a relation to the Date model
-  date      Date      @relation(fields: [dateId], references: [id])
-  dateId    String
+  id          String      @id @default(uuid())
+  title       String?
+  description String     
+  status      Boolean     
+  priority    Int         @default(1)
+  dateId      String
+  date        Date        @relation(fields: [dateId], references: [id])
+  subtasks    Subtask[]   
 }
 
+model Subtask {
+  id          String    @id @default(uuid())
+  content     String    
+  status      Boolean  
+  todoId      String
+  todo        Todo      @relation(fields: [todoId], references: [id])
+}

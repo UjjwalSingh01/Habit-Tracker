@@ -1,390 +1,341 @@
-import { Hono } from 'hono'
-import { cors } from 'hono/cors'
-import { decode, sign, verify } from 'hono/jwt'
-import { PrismaClient } from '@prisma/client/edge'
-import { withAccelerate } from '@prisma/extension-accelerate'
-import bcrypt from 'bcryptjs'
-import zod from 'zod'
-
-// const schema = .....
-// const result = schema.safeParse(detail)
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { sign, verify } from 'hono/jwt';
+import { PrismaClient } from '@prisma/client/edge';
+import { withAccelerate } from '@prisma/extension-accelerate';
+import bcrypt from 'bcryptjs';
+import zod from 'zod';
 
 const emailSchema = zod.string().email();
-
 const app = new Hono<{
-  Bindings: {
-    DATABASE_URL: string,
-    JWT_STRING: string
-  },
-  Variables: {
-    userId: string;
-  }
+  Bindings: { 
+    DATABASE_URL: string; 
+    JWT_STRING: string 
+  };
+  Variables: { 
+    userId: string 
+  };
 }>();
 
-app.use('*', cors())
+app.use('*', cors());
 
-type SignUpDetail = {
-  firstname: string,
-  lastname: string,
-  email: string,
-  password: string
-}
+// Initialize Prisma Client with Accelerate extension
+const initializePrisma = (url: string) =>
+  new PrismaClient({ datasourceUrl: url }).$extends(withAccelerate());
 
-app.post('/register', async (c) => {
-
-  const prisma = new PrismaClient({
-      datasourceUrl: c.env.DATABASE_URL
-  }).$extends(withAccelerate())
-  
-  const detail: SignUpDetail = await c.req.json();
-  console.log(detail)
-
-  const zodResult = emailSchema.safeParse(detail.email)
-  if(!zodResult.success){
-    c.status(400);
-    return c.json({
-      message: zodResult
-    })
-  }
-  
-  if(detail.password === "" || detail.firstname === ""){
-    c.status(400)
-    return c.json({
-      message: "Invalid Credential"
-    })
-  }
-
-  try {
-    const response = await prisma.user.findUnique({
-      where: {
-        email: detail.email,
-      },
-    })
-
-    if (response != null) {
-      c.status(400)
-      return c.json({
-        message: "User Already Exist"
-      })
-    }
-
-    const saltRounds = 10;
-    const hashpassword = await bcrypt.hash(detail.password, saltRounds);
-
-    const user = await prisma.user.create({
-      data: {
-        firstname: detail.firstname,
-        lastname: detail.lastname,
-        email: detail.email,
-        password: hashpassword
-      },
-    })
-
-    const token = await sign({ id: user.id }, c.env.JWT_STRING);
-
-    c.status(200);
-    return c.json({
-      message: token
-    })
-
-  } catch (error) {
-    console.error("Server Site Error is Signup: ", error);
-  }
-
-})
-
-
-type SigninDetail = {
-  email: string,
-  password: string
-}
-
-app.get('/login', async (c) => {
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL
-  }).$extends(withAccelerate())
-
-  const detail: Record<string,string> = await c.req.header();
-  const zodResult = emailSchema.safeParse(detail.email)
-  if(!zodResult.success){
-    return c.json({
-      message: zodResult
-    })
-  }
-
-  // console.log(detail);
-
-  try {
-    const response = await prisma.user.findUnique({
-      where: {
-        email: detail.email,
-      },
-    })
-
-    if(response === null){
-      return c.json({
-        message: "User Does not Exist"
-      })
-    }
-
-    const isMatch = await bcrypt.compare(detail.password, response.password)
-    if(!isMatch){
-      return c.json({
-        message: "Invalid Credentials"
-      })
-    }
-
-    const token = await sign({ id: response.id }, c.env.JWT_STRING);
-
-    return c.json({
-      message: token
-    })
-
-  } catch (error) {
-    console.error("Server Site error in Signin: ", error)
-  }
-})
-
-// Middleware
+// Middleware 
 app.use("/user/*", async (c, next) => {
   const token = c.req.header("authorization") || "";
-  // console.log("middle ware called");
+  
+  try {
+    const user = await verify(token, c.env.JWT_STRING);
+    c.set("userId", user.id);
+    await next();
+
+  } catch {
+    return c.json({ 
+      message: "You Are Not Logged In" 
+    }, 401);
+  }
+});
+
+
+app.post('/register', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
+  const detail = await c.req.json();
+
+  const emailValid = emailSchema.safeParse(detail.email);
+  if (!emailValid.success || !detail.password || !detail.firstname) {
+    return c.json({ 
+      message: "Invalid Credentials" 
+    }, 400);
+  }
 
   try {
-      const user = await verify(token, c.env.JWT_STRING)
-      c.set("userId", user.id);
+    const existingUser = await prisma.user.findUnique({ 
+      where: { 
+        email: detail.email 
+      } 
+    });
+    if (existingUser) {
+      return c.json({ 
+        message: "User Already Exists" 
+      }, 400);
+    }
 
-      await next();
+    const hashedPassword = await bcrypt.hash(detail.password, 10);
+    const newUser = await prisma.user.create({
+      data: {
+        firstName: detail.firstname,
+        lastName: detail.lastname,
+        email: detail.email,
+        password: hashedPassword
+      },
+    });
 
-  } catch (err) {
-      return c.json({
-          message: "You Are Not Logged In"
-      })
+    const token = await sign({ id: newUser.id }, c.env.JWT_STRING);
+    
+    return c.json({ 
+      message: token 
+    }, 200);
+
+  } catch (error) {
+    console.error("Error during registration:", error);
+    return c.json({ 
+      message: "Registration Failed" 
+    }, 500);
   }
-})
+});
 
 
-app.get('/user/fetchtodo', async(c) =>{
-  
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL
-  }).$extends(withAccelerate())
+app.post('/login', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
+  const { email, password } = await c.req.json();
 
-  const date: any = await c.req.query('date');
+  const emailValid = emailSchema.safeParse(email);
+  if (!emailValid.success) {
+    return c.json({ 
+      message: "Invalid Email Format" 
+    }, 400);
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ 
+      where: { 
+        email 
+      } 
+    });
+    
+    if (!user) {
+      return c.json({ 
+        message: "User Does Not Exist" 
+      }, 404);
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return c.json({ 
+        message: "Invalid Credentials" 
+      }, 401);
+    }
+
+    const token = await sign({ id: user.id }, c.env.JWT_STRING);
+    return c.json({ 
+      message: token 
+    }, 200);
+
+  } catch (error) {
+    console.error("Error during login:", error);
+    return c.json({ 
+      message: "Login Failed" 
+    }, 500);
+  }
+});
+
+
+app.get('/user/fetchtodo', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
+  const date = c.req.query('date');
   const userId = c.get("userId");
 
-  // console.log("backend " + date);
-
   try {
-    const response = await prisma.date.findFirst({
-      where:{
-        userId: userId,
-        date: date
-      }
-    })
-
-    if(response === null){
-      return c.json({
-        message: []
-      });
+    const dateRecord = await prisma.date.findFirst({ 
+      where: { 
+        userId, date
+      } 
+    });
+    if (!dateRecord) {
+      return c.json({ message: [] });
     }
 
     const todos = await prisma.todo.findMany({
-      where: {
-        dateId: response.id
-      }
-    })
-
-    return c.json({
-      message: todos
-    })
-
-  } catch (error) {
-    console.error("Server Side Error in Fetching Todo: ", error);
-  }
-  
-})
-
-
-type AddDetail = {
-  date: string,
-  addTodo: string
-}
-
-app.post('/user/addtodo', async(c) => {
-
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL
-  }).$extends(withAccelerate())
-
-  const userId = c.get("userId");
-  const detail: AddDetail = await c.req.json();
-
-  try {
-    const dates = await prisma.date.findFirst({
-      where:{
-        userId: userId,
-        date: detail.date
-      }
-    })
-
-    if(dates != null){
-      const createTodo = await prisma.todo.create({
-        data:{
-          dateId: dates.id,
-          content: detail.addTodo,
-          status: false
-        }
-      })
-
-      return c.json({
-        message: createTodo
-      })
-    }
-
-    else {
-      const createDate = await prisma.date.create({
-        data: {
-          date: detail.date,
-          userId: userId
-        },
-      })
-  
-      const createTodo = await prisma.todo.create({
-        data:{
-          dateId: createDate.id,
-          content: detail.addTodo,
-          status: false
-        }
-      })
-
-      return c.json({
-        message: createTodo
-      })
-    }
-
-  } catch (error) {
-    console.error("Server Side Error in AddingTodo: ", error)
-  }
-
-})
-
-
-type UpdateDetail = {
-  index: string,
-  completed: boolean
-}
-
-app.patch('/updatetodo', async(c) => {
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL
-  }).$extends(withAccelerate())
-
-  const detail: UpdateDetail = await c.req.json();
-
-  try {
-    const response = await prisma.todo.update({
-      where: {
-        id: detail.index,
+      where: { 
+        dateId: dateRecord.id 
       },
+      include: { 
+        subtasks: true 
+      },
+    });
+
+    return c.json({ message: todos });
+  
+  } catch (error) {
+    console.error("Error fetching todos:", error);
+    return c.json({ 
+      message: "Failed to fetch todos" 
+    }, 500);
+  }
+});
+
+
+app.post('/user/addtodo', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
+  const userId = c.get("userId");
+  const { date, title, description, priority, subtasks } = await c.req.json();
+
+  try {
+    let dateRecord = await prisma.date.findFirst({ 
+      where: { 
+        userId, date 
+      } 
+    });
+    if (!dateRecord) {
+      dateRecord = await prisma.date.create({ 
+        data: { 
+          date, userId
+        } 
+      });
+    }
+
+    const newTodo = await prisma.todo.create({
       data: {
-        status: detail.completed
+        dateId: dateRecord.id,
+        title: title,
+        description,
+        priority,
+        status: false,
       },
-    })
+    });
 
-    return c.json({
-      message: "Updated Successfully"
-    })
+    if (subtasks && subtasks.length) {
+      const subtaskData = subtasks.map((subtask: any) => ({
+        content: subtask.content,
+        status: false,
+        todoId: newTodo.id,
+      }));
+      await prisma.subtask.createMany({ 
+        data: subtaskData 
+      });
+    }
 
-  } catch(error){
-    console.error("Server Side Error in Updating Todo: ", error);
+    return c.json({ message: newTodo });
+
+  } catch (error) {
+    console.error("Error adding todo:", error);
+    return c.json({ 
+      message: "Failed to add todo" 
+    }, 500);
   }
-})
+});
 
 
-type DeleteDetail = {
-  index: string
-}
-
-app.delete('/deletetodo', async(c) =>{
-
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL
-  }).$extends(withAccelerate())
-
-  const detail: any = await c.req.query('id')
-  // console.log(detail);
+app.patch('/user/updatetodo', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
+  const { index, completed } = await c.req.json();
 
   try {
-    const deleteTodo = await prisma.todo.delete({
-      where: {
-        id: detail
+    await prisma.todo.update({
+      where: { 
+        id: index 
       },
-    })
+      data: { 
+        status: completed
+      },
+    });
 
-    console.log(deleteTodo);
-
-    return c.json({
-      message: "Todo Deleted Successfully"
-    })
+    return c.json({ 
+      message: "Todo updated successfully" 
+    });
   } catch (error) {
-    console.error("Error in Deleting Todo: ", error); 
+    console.error("Error updating todo:", error);
+    return c.json({ 
+      message: "Failed to update todo" 
+    }, 500);
   }
-})
+});
 
 
-app.get('/user/tracker', async(c) => {
+app.patch('/user/updatesubtask', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
+  const { subtaskId, completed } = await c.req.json();
+
+  if (!subtaskId) {
+    return c.json({ message: "Subtask ID is required" }, 400);
+  }
+
+  try {
+    const updatedSubtask = await prisma.subtask.update({
+      where: { id: subtaskId },
+      data: { status: completed },
+    });
+
+    return c.json({ 
+      message: "Subtask updated successfully", 
+      subtask: updatedSubtask 
+    });
   
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL
-  }).$extends(withAccelerate())
+  } catch (error) {
+    console.error("Error updating subtask:", error);
+    return c.json({ 
+      message: "Failed to update subtask" 
+    }, 500);
+  }
+});
 
+
+app.delete('/user/deletetodo', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
+  const todoId = c.req.query("id");
+
+  try {
+    await prisma.subtask.deleteMany({ 
+      where: { 
+        todoId 
+      } 
+    });
+    await prisma.todo.delete({ 
+      where: { 
+        id: todoId 
+      } 
+    });
+
+    return c.json({ 
+      message: "Todo and subtasks deleted successfully" 
+    });
+  
+  } catch (error) {
+    console.error("Error deleting todo:", error);
+    return c.json({ 
+      message: "Failed to delete todo" 
+    }, 500);
+  }
+});
+
+// Fetch user todo stats for tracker
+app.get('/user/tracker', async (c) => {
+  const prisma = initializePrisma(c.env.DATABASE_URL);
   const userId = c.get("userId");
 
   try {
-        const todosStats = [];
+    const stats = await prisma.date.findMany({
+      where: { userId },
+      select: {
+        date: true,
+        todos: {
+          select: { 
+            id: true, 
+            status: true 
+          },
+        },
+      },
+    });
 
-        const datesArray = await prisma.date.findMany({
-          where:{
-            userId: userId,
-          }
-        })
-    
-        // Loop through each date in the array
-        for (const date of datesArray) {
-          // Calculate total todos for the date
-          const totalTodos = await prisma.todo.count({
-            where: {
-              dateId: date.id
-            }
-          });
-    
-          // Calculate total completed todos for the date
-          const completedTodos = await prisma.todo.count({
-            where: {
-              dateId: date.id,
-              status: true
-            }
-          });
-    
-          // Push the stats for the current date to the todosStats array
-          todosStats.push({
-            date: date.date,
-            totalTodos: totalTodos,
-            completedTodos: completedTodos
-          });
-        }
-    
-        // Return the todosStats array with stats for each date
-        return c.json({
-          message: todosStats
-        })
+    const todosStats = stats.map(({ date, todos }) => ({
+      date,
+      totalTodos: todos.length,
+      completedTodos: todos.filter((todo) => todo.status).length,
+    }));
 
-      } catch (error) {
-        console.error('Error calculating todos stats:', error);
-      }
-})
+    return c.json({ 
+      message: todosStats 
+    });
 
+  } catch (error) {
+    console.error("Error fetching tracker stats:", error);
+    return c.json({ 
+      message: "Failed to fetch tracker stats" 
+    }, 500);
+  }
+});
 
-export default app
-
+export default app;

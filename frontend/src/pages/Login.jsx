@@ -13,11 +13,11 @@ export default function Login(){
     async function handleChange(){
         try {
             // as a param ??
-            const response = await axios.get('http://localhost:8787/login', {
-                headers: {
+            const response = await axios.post('http://localhost:8787/login', {
+                 
                     email: email,
                     password: password
-                }
+                
             });
 
             localStorage.setItem("token", response.data.message)

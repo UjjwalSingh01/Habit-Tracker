@@ -1,9 +1,8 @@
-import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-export default function Navbar(){
-
-  const navigate = useNavigate()
+export default function Navbar() {
+  const navigate = useNavigate();
 
   async function logout() {
     localStorage.clear();
@@ -11,15 +10,33 @@ export default function Navbar(){
   }
 
   return (
-    <div className='flex  bg-red-400 justify-between'>
-      <div className='flex gap-4 h-16 justify-center items-center'>
-          <h1 className='text-2xl font-medium font-serif hover:font-semibold'><Link className='m-3' to='/homepage'> Todo </Link></h1>
-          <h1 className='text-2xl font-medium font-serif hover:font-semibold'><Link className='m-3' to='/tracker'> Tracker </Link></h1>
+    <div className='flex bg-gradient-to-r from-custom-200 via-custom-300 to-custom-400 shadow-md py-4 px-8 justify-between items-center'>
+      <div className='flex gap-6 h-16 items-center'>
+        <h1 className='text-2xl font-semibold font-serif'>
+          <Link
+            to='/homepage'
+            className='text-white transition transform hover:scale-105 hover:text-gray-200'
+          >
+            Todo
+          </Link>
+        </h1>
+        <h1 className='text-2xl font-semibold font-serif'>
+          <Link
+            to='/tracker'
+            className='text-white transition transform hover:scale-105 hover:text-gray-200'
+          >
+            Tracker
+          </Link>
+        </h1>
       </div>
-      <div className='flex gap-4 h-16 justify-center items-center mr-5'>
-        <button onClick={() => {logout()}} className='bg-blue-300 p-2 rounded-2xl text-md font-medium font-serif hover:bg-blue-400'>Logout</button>
+      <div className='flex h-16 items-center'>
+        <button
+          onClick={logout}
+          className='bg-custom-300 text-white p-3 rounded-full shadow-lg transition transform hover:bg-custom-400 hover:scale-105'
+        >
+          Logout
+        </button>
       </div>
     </div>
-  )
+  );
 }
-
