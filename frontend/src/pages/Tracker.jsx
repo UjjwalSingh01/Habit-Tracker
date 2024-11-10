@@ -13,7 +13,7 @@ export default function Tracker() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get('http://localhost:8787/user/tracker', {
+                const response = await axios.get('https://habit-tracker-backend.dragneeln949.workers.dev/user/tracker', {
                     headers: {
                         "Authorization": localStorage.getItem("token")
                     }

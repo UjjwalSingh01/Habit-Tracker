@@ -17,7 +17,10 @@ const app = new Hono<{
   };
 }>();
 
-app.use('*', cors());
+app.use('*', cors({
+  origin: 'https://habit-task-track.netlify.app/',
+}));
+
 
 // Initialize Prisma Client with Accelerate extension
 const initializePrisma = (url: string) =>

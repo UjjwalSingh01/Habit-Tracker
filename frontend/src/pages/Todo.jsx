@@ -18,7 +18,7 @@ export default function TodoList() {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await axios.get("http://localhost:8787/user/fetchtodo", {
+        const response = await axios.get("https://habit-tracker-backend.dragneeln949.workers.dev/user/fetchtodo", {
           params: { date: selectedDate },
           headers: { Authorization: localStorage.getItem("token") },
         });
@@ -49,7 +49,7 @@ export default function TodoList() {
     setTasks(sortedTasks);
 
     try {
-      await axios.patch("http://localhost:8787/user/updatetodo", {
+      await axios.patch("https://habit-tracker-backend.dragneeln949.workers.dev/user/updatetodo", {
         index: taskToToggle.id,
         completed: !taskToToggle.status,
       },{
@@ -80,7 +80,7 @@ export default function TodoList() {
   
     try {
       await axios.patch(
-        "http://localhost:8787/user/updatesubtask",{
+        "https://habit-tracker-backend.dragneeln949.workers.dev/user/updatesubtask",{
           subtaskId: subtask.id,
           completed: subtask.status,
         },{
@@ -98,7 +98,7 @@ export default function TodoList() {
     setTasks(updatedTasks);
 
     try {
-      await axios.delete(`http://localhost:8787/user/deletetodo?id=${taskId}`, {
+      await axios.delete(`https://habit-tracker-backend.dragneeln949.workers.dev/user/deletetodo?id=${taskId}`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
     } catch (error) {
@@ -112,7 +112,7 @@ export default function TodoList() {
   
     try {
       const response = await axios.post(
-        "http://localhost:8787/user/addtodo",
+        "https://habit-tracker-backend.dragneeln949.workers.dev/user/addtodo",
         {
           date: selectedDate,
           title: taskTitle,
